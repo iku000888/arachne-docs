@@ -1,6 +1,8 @@
 (ns myproj.core
-  (:require [com.stuartsierra.component :as c]
-            [arachne.log :as log]))
+  (:require [arachne.log :as log]
+            [com.stuartsierra.component :as c]
+            [hiccup2.core :as h]
+            [ring.util.response :as res]))
 
 (defrecord Widget []
   c/Lifecycle
@@ -27,6 +29,31 @@
     {:status 200
      :body (str "Hello, " name "!")}))
 
+;; New code
+(defn fun-handler [req]
+  (-> {:status 200
+       :body
+       (-> [:div "Let's have fun!"
+            [:hr]
+            #_[:form {:method "POST"}
+               [:input {:name "foo"}]
+               [:input {:type "submit"
+                        :value "send!!!"}]]
+            ;;[:hr] "url for fun = " ((:url-for req) :myproj/fun )
+            ;;[:hr] "access count= " (pr-str (:history-store req))
+            ]
+           h/html
+           str)}
+      (res/content-type  "text/html; charset=utf-8")))
+
+(defn num-atom []
+  (atom 0))
+
+(defn post-handler [req]
+  ;;(swap! (:history-store req) inc)
+  {:status 200
+   :body (pr-str req)})
+
 (comment
   (require '[arachne.core :as arachne])
   (require '[com.stuartsierra.component :as c])
@@ -36,6 +63,11 @@
   (def rt (c/start rt))
   (def rt (c/stop rt))
 
+  ;;Force system resart
+  (do (c/stop rt)
+      (def cfg (arachne/config :myproj/app))
+      (def rt (arachne/runtime cfg :myproj/runtime))
+      (def rt (c/start rt)))
 
   (require '[arachne.core.config :as cfg])
   (cfg/q cfg '[:find ?e
